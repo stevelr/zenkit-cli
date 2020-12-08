@@ -251,7 +251,7 @@ struct DelWebhookOpt {
 /// Zenkit command-line tool.
 /// Source and docs at https://github.com/stevelr/zenkit-cli
 #[derive(Clap, PartialEq, Debug)]
-#[clap(name = env!("CARGO_PKG_NAME"), version = env!("CARGO_PKG_VERSION"))]
+#[clap(name = env!("CARGO_BIN_NAME"), version = env!("CARGO_PKG_VERSION"))]
 struct Opt {
     /// URL for API endpoint
     #[clap(long, default_value = "https://zenkit.com/api/v1")]

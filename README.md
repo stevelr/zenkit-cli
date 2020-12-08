@@ -4,7 +4,8 @@ and perform backups to json.
 
 ## Installation
 
-Install the executable with `cargo install zenkit-cli`. 
+Install with `cargo install zenkit-cli`. The program name is `zk`
+(usually installed to $HOME/.cargo/bin).
 Instructions for installing cargo are
 [here](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 
