@@ -1,0 +1,28 @@
+[package]
+name = "zenkit-cli"
+version = "0.3.0"
+authors = ["stevelr <git@somecool.net>"]
+edition = "2018"
+description = "Command-line tool for interacting with Zenkit workspaces"
+categories = ["command-line-utilities", "api-bindings"]
+keywords = ["zenkit","cli","bindings"]
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/stevelr/zenkit-cli"
+repository = "https://github.com/stevelr/zenkit-cli"
+readme = "README.md"
+
+[dependencies]
+bytes = "0.5"
+clap = { version="3.0.0-beta.2" }
+reqwest = { version="0.10", features=["json"] }
+serde_json = "1.0"
+serde_repr = "0.1"
+serde = { version = "1.0", features = ["derive"]}
+strum_macros = "0.19"
+tokio = { version="0.2", features=["rt-core", "macros", "fs"]}
+uuid = "0.8"
+zenkit = { version="0.3", path="../zenkit-rs" }
+
+[[bin]]
+name = "zk"
+path = "src/main.rs"
