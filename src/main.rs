@@ -3,9 +3,10 @@ use std::{fmt, fs, sync::Arc};
 use zenkit::{
     self,
     types::{
-        ElementCategoryId, NewWebhook, TextFormat, UpdateAction, WebhookTriggerType, Workspace, ID,
+        ElementCategoryId, FieldVal, NewWebhook, TextFormat, UpdateAction, WebhookTriggerType,
+        Workspace, ID,
     },
-    ApiConfig, FieldVal, Result,
+    ApiConfig,
 };
 
 mod backup;
