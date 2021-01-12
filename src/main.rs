@@ -302,7 +302,7 @@ fn parse_setval(s: String) -> FieldVal {
     }
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     let opt = Opt::parse();
     if let Err(e) = run(opt).await {
