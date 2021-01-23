@@ -240,6 +240,10 @@ struct WebhookOpt {
     /// Locale
     #[clap(long, default_value = "en")]
     locale: String,
+
+    /// Limit to the workspace
+    #[clap(short, long)]
+    workspace: bool,
 }
 
 #[derive(Clap, PartialEq, Debug)]
@@ -505,7 +509,11 @@ async fn run(opt: Opt) -> Result<(), Error> {
             let mut item_id: Option<ID> = None;
             let mut list_id: Option<ID> = None;
             let mut field_id: Option<ID> = None; // experimental
-            let mut workspace_id: Option<ID> = None;
+            let mut workspace_id: Option<ID> = if webhook_opt.workspace {
+                Some(ws.get_id())
+            } else {
+                None
+            }; // Some(ws.get_id());
             let list_info;
             match webhook_opt.list {
                 Some(li) => {
