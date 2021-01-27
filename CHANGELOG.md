@@ -1,5 +1,10 @@
 CHANGELOG for zenkit-cli (https://github.com/stevelr/zenkit-cli)
 
+## v0.4.3 2021-01-27
+
+- rebuilt with latest zenkit 0.6.1, which includes fix for
+  parsing date fields with no time.
+
 ## v0.4.2 2021-01-23
 
 - upgrade dependency to zenkit 0.6
