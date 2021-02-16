@@ -1,5 +1,27 @@
 CHANGELOG for zenkit-cli (https://github.com/stevelr/zenkit-cli)
 
+## v0.4.4
+
+- new config options:
+  - Api token can be specified in a config file with '-c' option, or in the
+    environment as 'ZENKIT_TOKEN'. The '--token' parameter has been removed to encourage
+    best practices of not putting secrets on the command line. 
+    Of course, it's still possible to use `ZENKIT_TOKEN="..." zk args ...`
+    
+  - For subcommands that require a workspace, its name can be specified in the config file
+    or from the environment as ZENKIT_WORKSPACE.
+    
+  - Api endpoint is no longer a cli option, but it can be specified in the config
+    file or in the environment as ZENKIT_ENDPOINT.
+  
+Config file syntax (toml):
+```toml
+[zenkit]
+token = "0000"
+workspace = "My Workspace"
+```
+  - updated dependencies (cfg-if 1.0, bytes 1.0)
+  
 ## v0.4.3 2021-01-27
 
 - rebuilt with latest zenkit 0.6.1, which includes fix for

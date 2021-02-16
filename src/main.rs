@@ -1,4 +1,5 @@
 use clap::Clap;
+use config::Config;
 use std::{fmt, fs, sync::Arc};
 use zenkit::{
     self,
@@ -11,9 +12,6 @@ use zenkit::{
 
 mod backup;
 use backup::{backup_list, BackupItem};
-
-const TOKEN_VAR: &str = "ZENKIT_API_TOKEN";
-const WORKSPACE_VAR: &str = "ZENKIT_WORKSPACE";
 
 #[derive(Debug)]
 enum Error {
@@ -36,6 +34,12 @@ impl From<zenkit::Error> for Error {
     }
 }
 
+impl From<config::ConfigError> for Error {
+    fn from(e: config::ConfigError) -> Error {
+        Error::Message(format!("config: {}", e.to_string()))
+    }
+}
+
 impl From<std::io::Error> for Error {
     fn from(e: std::io::Error) -> Error {
         Error::Io(e.to_string())
@@ -48,11 +52,11 @@ impl fmt::Display for Error {
     }
 }
 
-fn parse_try_textfmt(s: &str) -> Result<TextFormat, &'static str> {
+fn parse_try_text_format(s: &str) -> Result<TextFormat, &'static str> {
     if let Ok(tf) = s.parse() {
         Ok(tf)
     } else {
-        Err("Invalid textformat: should be plain,markdown, or html")
+        Err("Invalid text format: should be plain, markdown, or html")
     }
 }
 
@@ -79,7 +83,7 @@ struct SetValueOpt {
 
     /// Text format (plain,markdown, or html). If unspecified, leave as-is.
     /// Only applicable for Text fields.
-    #[clap(short, long, parse(try_from_str=parse_try_textfmt))]
+    #[clap(short, long, parse(try_from_str=parse_try_text_format))]
     text: Option<TextFormat>,
 
     /// Read Value from file (alternate to -v). Only applicable for Text fields.
@@ -253,23 +257,26 @@ struct DelWebhookOpt {
     webhook: u64,
 }
 
-/// Zenkit command-line tool.
-/// Source and docs at https://github.com/stevelr/zenkit-cli
+/// Zenkit command-line tool. Source and docs at https://github.com/stevelr/zenkit-cli
+/// Zenkit api token must be specified either in config file with -c option
+/// or in environment as `ZENKIT_TOKEN`.
 #[derive(Clap, PartialEq, Debug)]
 #[clap(name = env!("CARGO_BIN_NAME"), version = env!("CARGO_PKG_VERSION"))]
 struct Opt {
-    /// URL for API endpoint
-    #[clap(long, default_value = "https://zenkit.com/api/v1")]
-    endpoint: String,
+    /// Configuration file  in TOML format, such as:
+    /// ```toml
+    /// [zenkit]
+    /// token = "00000"
+    /// workspace = "My Workspace"
+    /// ```
+    config: Option<String>,
 
-    /// API token. Defaults to environment var ZENKIT_API_TOKEN
-    #[clap(short, long)]
-    token: Option<String>,
-
-    /// Workspace name, id, or uuid. Required unless set in environment var ZENKIT_WORKSPACE
+    /// Workspace name, id, or uuid. Required unless set in config file or environment
+    /// variable ZENKIT_WORKSPACE
     #[clap(short, long)]
     workspace: Option<String>,
 
+    /// Subcommand
     #[clap(subcommand)]
     cmd: Sub,
 }
@@ -315,30 +322,42 @@ async fn main() {
     }
 }
 
+/// Build config from
+///  - cli option "-c CONFIG-FILE"
+///  - environment overrides of the form "ZENKIT_"
+fn load_config(file: Option<String>) -> Result<Config, Error> {
+    let mut settings = Config::default();
+    if let Some(opt_path) = file {
+        settings.merge(config::File::with_name(&opt_path))?;
+    }
+    let env_conf = config::Environment::new().separator("_");
+    settings.merge(env_conf)?;
+    Ok(settings)
+}
+
 async fn run(opt: Opt) -> Result<(), Error> {
-    let token = match opt.token {
-        Some(t) => t,
-        None => std::env::var(&TOKEN_VAR)
-            .map_err(|_| Error::Message(format!("Missing env var {}", TOKEN_VAR)))?,
+    let settings = load_config(opt.config)?;
+    let token = match settings.get_str("zenkit.token") {
+        Ok(token) => token,
+        Err(_) => settings.get_str("zenkit.api.token") // deprecated name
+            .map_err(|_| Error::Message(
+                "Missing zenkit token. add to config file with `-c` option or set in environment as ZENKIT_TOKEN".into()))?,
     };
+
     let ws_name = match opt.cmd {
         // we only need to get workspace for some commands
         Sub::Workspaces | Sub::ListWebhooks | Sub::DeleteWebhook(_) => String::from(""),
         _ => match opt.workspace {
-            Some(t) => t,
-            None => std::env::var(&WORKSPACE_VAR).map_err(|_| {
-                Error::Message(format!(
-                    "Workspace undefined. Must be set with '-w' or in env var {}",
-                    WORKSPACE_VAR
-                ))
-            })?,
-        },
+                Some(name) => name,
+                None => settings.get_str("zenkit.workspace").map_err(|_| Error::Message(
+                    "Workspace must be specified in config file with `-c` option or in environment as ZENKIT_WORKSPACE".into())
+                )?,
+            },
     };
-
-    let api = zenkit::init_api(ApiConfig {
-        endpoint: opt.endpoint,
-        token,
-    })?;
+    let endpoint = settings
+        .get_str("zenkit.endpoint")
+        .unwrap_or_else(|_| zenkit::ApiConfig::default().endpoint);
+    let api = zenkit::init_api(ApiConfig { token, endpoint })?;
 
     match opt.cmd {
         Sub::Workspaces => {
@@ -394,7 +413,7 @@ async fn run(opt: Opt) -> Result<(), Error> {
             for field in api.get_list_elements(list_info.get_id()).await?.iter() {
                 println!(
                     "{}\t{}\t{}\t{}",
-                    field.id, field.uuid, field.name, field.element_category
+                    field.id, field.uuid, field.name, field.element_category as u64
                 )
             }
         }
