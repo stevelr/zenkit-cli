@@ -14,7 +14,7 @@ mod backup;
 use backup::{backup_list, BackupItem};
 
 #[derive(Debug)]
-enum Error {
+pub(crate) enum Error {
     Message(String),
     Zenkit(zenkit::Error),
     Io(String),
@@ -43,6 +43,12 @@ impl From<config::ConfigError> for Error {
 impl From<std::io::Error> for Error {
     fn from(e: std::io::Error) -> Error {
         Error::Io(e.to_string())
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(e: serde_json::Error) -> Error {
+        Error::Message(format!("Error creating json output: {}", e.to_string()))
     }
 }
 
@@ -121,13 +127,18 @@ struct CreateOpt {
 }
 
 #[derive(Clap, PartialEq, Debug)]
-struct BackupOpt {
+pub(crate) struct BackupOpt {
     /// Output folder where json files will be created
     #[clap(short, long)]
-    output: String,
+    pub output: String,
 
     /// List - backup single list. If not specified, backs up all lists
-    list: Option<String>,
+    #[clap(short, long)]
+    pub list: Option<String>,
+
+    /// Include archived items
+    #[clap[long]]
+    pub include_archived: bool,
 }
 
 #[derive(Clap, PartialEq, Debug)]
@@ -584,12 +595,12 @@ async fn run(opt: Opt) -> Result<(), Error> {
             use std::time::SystemTime;
             let ws = api.get_workspace(&ws_name).await?;
             let mut lists: Vec<BackupItem> = Vec::new();
-            if let Some(lname) = backup_opt.list {
-                lists.push(backup_list(ws.get_id(), &lname, &backup_opt.output).await?);
+            if let Some(ref lname) = backup_opt.list {
+                lists.push(backup_list(ws.get_id(), &lname, &backup_opt).await?);
             } else {
                 // backup all lists
                 for list in ws.lists.iter() {
-                    lists.push(backup_list(ws.get_id(), &list.uuid, &backup_opt.output).await?);
+                    lists.push(backup_list(ws.get_id(), &list.uuid, &backup_opt).await?);
                 }
             }
             // create summary_tstamp.json

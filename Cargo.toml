@@ -1,6 +1,6 @@
 [package]
 name = "zenkit-cli"
-version = "0.4.4"
+version = "0.4.5"
 authors = ["stevelr <git@somecool.net>"]
 edition = "2018"
 description = "Command-line tool for interacting with Zenkit workspaces"
@@ -14,7 +14,7 @@ readme = "README.md"
 [dependencies]
 bytes = "1.0"
 clap = { version="3.0.0-beta.2" }
-config = "0.10"
+config = "0.11"
 reqwest = { version="0.11", features=["json"] }
 serde_json = "1.0"
 serde_repr = "0.1"
@@ -24,7 +24,7 @@ tokio = { version="1.0", features=["rt", "macros", "fs"]}
 
 [dependencies.zenkit]
 version = "0.6"
-path = "../zenkit-rs"
+#path = "../zenkit-rs"
 
 [[bin]]
 name = "zk"
