@@ -116,6 +116,8 @@ workspace name. The -w option is omitted below for brevity.
   
   - Backup
     - Backup lists and field definitions to json files</br>
-      `zk backup -o output_dir [ -l list ]`</br>
+      `zk backup -o output_dir [ -l list ] [ --include-archived ]`</br>
       If no list is specified, all lists in the workspace are backed up.
+      The optional flag '--include-archived' adds archived items
+      to the list backup.
 
